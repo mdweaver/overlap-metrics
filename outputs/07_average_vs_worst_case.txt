@@ -1,0 +1,18 @@
+
+A shift: unsupported share of target = 0.13
+est    worst-case/L   GP RMS bias (theory)  GP RMS (sim)
+OLS         0.571          0.203          0.198
+IPW         0.288          0.047          0.048
+1-NN        0.177          0.040          0.040
+
+B gap: unsupported share of target = 0.37
+est    worst-case/L   GP RMS bias (theory)  GP RMS (sim)
+OLS         0.843          0.377          0.377
+IPW         0.382          0.173          0.173
+1-NN        0.292          0.149          0.148
+
+C hole: unsupported share of target = 0.50
+est    worst-case/L   GP RMS bias (theory)  GP RMS (sim)
+OLS         0.591          0.342          0.343
+IPW         0.461          0.231          0.232
+1-NN        0.334          0.197          0.198

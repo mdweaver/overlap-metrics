@@ -16,7 +16,17 @@
 4. **Geometric diagnostics mislead in both directions.** The convex hull and Tukey depth miss holes in the support. In Illustration 4, treated units sitting inside an empty hole are rated *deeper* than well-supported ones. In high dimension the same diagnostics declare "extrapolation" even when treated and control groups are *identical* (Illustration 2). Local measures (nearest-neighbour or union-of-balls coverage, conformal outlier p-values, persistent homology in low dimension) detect holes correctly. But with raw Euclidean distance they are in turn blind to diffuse high-dimensional shifts that the effective sample size catches (Illustration 2). The choice of metric is therefore the crux.
 5. **Continuous treatments are where the problem is most neglected.** For the dose-response \(\mu(t)=E[Y(t)]\), positivity requires the whole vertical slice \(\{t\}\times\mathrm{supp}(X)\) to lie in the joint support of \((T,X)\). In a design where \(T\) is simply \(X\) plus bounded noise, strict positivity fails at *every* dose, even though \(T\) ranges over the whole real line. GPS-weighting then does not blow up: it silently estimates the effect for a different population (Illustration 3). Shift-type estimands need only local support, and their overlap can be graded directly.
 
-**Recommended direction (ranked first in §5).** Develop the overlap frontier and its extrapolation floor into a formally justified, target-specific metric with (i) a null-calibrated "excess floor", (ii) inference, (iii) outcome-informed metrics for high dimension, and (iv) versions for continuous treatments and policy estimands. Pair it with a finite-sample conformal test of support membership for the target population as a complementary yes/no layer.
+**Recommended direction (ranked first in §5; revised after discussion).** A **hybrid sensitivity analysis** (§4.6).
+
+1. Split the target units into *supported* and *unsupported* sets by their distance to the comparison data, at a range of cutoffs.
+2. Present results as **curves**:
+   - the effect on the supported subpopulation (unsupported units excluded), against the cutoff;
+   - the full-population effect, with worst-case Lipschitz bounds applied *only* to the unsupported units, against the cutoff and the assumed outcome roughness \(L\).
+3. Supply an **empirical estimate of the roughness** from comparison-arm outcomes only.
+
+The data can rule out any roughness below that estimate. They cannot bound it from above in the unsupported region, so results are shown at multiples of it, with a breakdown value.
+
+The overlap frontier (§4.2) is the outcome-free design-stage map that comes before this analysis. A conformal support test (§4.5) provides a finite-sample version of the supported/unsupported split.
 
 ---
 
@@ -370,16 +380,73 @@ The Lipschitz constant \(L\) is never estimated by the metric itself. The output
 
 The frontier is graded. A yes/no layer with finite-sample validity can sit on top of it: a **target-specific conformal support test.** Treat donors as the reference sample. Score each target unit (or each \((x,t)\) counterfactual) by distance to its \(k\)-th nearest donor. Compute split-conformal p-values, then apply Benjamini–Hochberg. This yields (i) the set of target units credibly outside the comparison support and (ii) a confidence bound on the share of the estimand that lies there. That share is exactly the mass that partial-identification approaches (Susmann et al. 2025) must bound worst-case. Illustration 4 shows the idea working: all 50 hole units are flagged, and 1 of 50 supported units is a false flag.
 
+### 4.6 The hybrid analysis: support split, sensitivity curves and empirical roughness
+
+**Why a hybrid.** A pure worst case is too pessimistic where the data can speak. There, how the outcome behaves can be estimated and checked. It is the right stance only where the data cannot speak. Illustration 7 (`scripts/07_average_vs_worst_case.py`) quantifies this.
+
+* Under a Gaussian-process prior on \(m_0\), the root-mean-square bias of any weights is exactly the kernel MMD between the target and the weighted comparison sample. Simulation over 2,000 prior draws matches the theory to the second decimal.
+* That average-case bias is 4–7× smaller than the Lipschitz worst case in the shift scenario, but only about 2× smaller in the gap and hole scenarios.
+* For IPW it separates "gap" from "shift" by 3.7×, against 1.3× for the worst case.
+
+Average-case reasoning is therefore both less pessimistic and *more discriminating* in supported regions.
+
+**Procedure** (for the ATT; it carries over to other targets by changing \(P^\*\) and the donor set).
+
+1. **Support split.** Compute each target unit's distance \(d_i\) to the comparison data: nearest neighbour, or a conformal p-value (§4.5). Express cutoffs \(c\) as multiples of the typical spacing among comparison units, so a cutoff of "3" means "farther than three typical gaps". The supported set is \(S(c)=\{i: d_i\le c\}\); the rest is \(U(c)\).
+2. **Comparison-arm outcome model.** Fit a flexible model (here a Gaussian process with per-covariate length-scales) to *control outcomes only*. Treated outcomes and the effect are never used, which keeps the design-stage spirit.
+3. **Empirical roughness.** Compute the gradient norm of the fitted surface over the comparison support. Report its median, 90th percentile and maximum, with bootstrap intervals. The data refute any \(L\) below the Lipschitz constant of the fitted comparison values, because the Lipschitz identified set is empty there. That gives a *data-based lower limit* for \(L\).
+4. **Curves.**
+   * *Exclude:* the effect on \(S(c)\) against \(c\), with the share excluded. The estimand changes with \(c\), so the share and the composition of the retained population must be reported alongside.
+   * *Keep and bound:* the full-population effect. Units in \(S(c)\) are imputed by the outcome model. Units in \(U(c)\) receive the sharp Lipschitz identified set \(\big[\max_j m_j-L\,d(x,X_j),\ \min_j m_j+L\,d(x,X_j)\big]\), the McShane–Whitney extensions of the fitted comparison values. This is plotted against \(L\) for several cutoffs.
+   * *Map:* the 95% lower bound over \((c,L)\), with the contour where it crosses zero. This is the breakdown roughness as a function of the cutoff.
+
+**Interpreting \(L\).** \(L\) is in outcome units per covariate unit: how fast the expected untreated outcome can change with the covariates in the unsupported region. Results are read at the empirical roughness (the steepest change seen where data exist) and at multiples of it: "the conclusion survives unless the outcome changes more than 2× faster in the unsupported region than it ever does where we observe it". The data can never rule out *larger* \(L\) in the unsupported region; that is the irreducible, assumption-based part, and the curves make it explicit.
+
+**Illustration 6** (`scripts/06_hybrid_sensitivity.py`).
+- *Data:* 2-D covariates. Controls are uniform on \([-2,1]\times[-2,2]\); treated units are uniform on \([0,2]\times[-2,2]\), so treated with \(x_1>1\) lack comparable controls. The effect is \(\tau(x)=0.25+0.25x_1\), and the true ATT is 0.50.
+- *Two outcome surfaces:* they are identical where controls exist, so the control data cannot tell them apart. One **continues** linearly (gradient 1.12). The other **bends** in the unsupported region (gradient up to 4.03).
+
+![hybrid](../outputs/06_hybrid.png)
+
+* **Empirical roughness.** 90th-percentile gradient 1.15 (bootstrap 90% interval 1.12–1.30), against a true 1.12 in the supported region. The data refute \(L<1.16\).
+* **Exclude (panel c).** Trimmed estimates track the true ATT of the retained units, which itself moves with the cutoff (0.38 at the tightest cutoff, 0.50 when nothing is excluded). Excluding nothing and trusting the model's extrapolation gives 0.71 (95% CI 0.60–0.81) under the bending surface: confidently wrong.
+* **Keep and bound (panels d–e), at the empirical roughness, cutoff 3× spacing.**
+
+  | Outcome surface | Full-ATT interval at the empirical roughness | At 2× that roughness | Contains truth (0.50)? |
+  |---|---|---|---|
+  | continues | [0.34, 1.04] | [0.05, 1.33] | yes, both |
+  | bends | [0.59, 1.28] | [0.29, 1.57] | only at 2× (needs \(L\approx1.8\)) |
+
+  The bending surface shows why results must be shown as curves over \(L\). Roughness estimated in the supported region need not hold in the unsupported one, and the curve shows how much faster the outcome would have to change there to matter.
+* **Breakdown (panel f, table).** The full-ATT lower bound reaches zero at \(L\approx2.4\)–\(3.6\) (continues) or \(3.1\)–\(5.3\) (bends), depending on the cutoff. That is 2–4.5× the empirical roughness.
+* **Cutoff trade-off.** A tighter cutoff sends more units to the bounded set: more honest, but wider. A looser cutoff trusts the outcome model further. Showing several cutoffs makes this choice visible rather than hidden.
+
+**Open issues for this procedure.**
+1. Gradient estimates from a smoothed fit are attenuated by smoothing and inflated by noise; the bootstrap covers only part of this.
+2. The per-unit Lipschitz sets ignore estimation error in the fitted comparison values; widening by their posterior sd is a fix.
+3. The supported-unit imputations carry their own model bias. An average-case (GP-posterior) allowance for it would complete the hybrid.
+4. In high dimension, distances and \(L\) must be defined on outcome-relevant directions; the fitted length-scales supply a natural metric (§4.4).
+5. Continuous and policy versions replace the treated units by \((X_i,t)\) or \((X_i,T_i+\delta)\) targets and use a cost on \((x,t)\).
+
 ---
 
 ## 5. Ranked research plan
 
 Each direction lists what it would need to become a contribution, and the main risks.
 
-### Rank 1: The overlap frontier and extrapolation floor (target-specific, graded, estimator-agnostic)
+### Rank 1: Hybrid sensitivity analysis built on the overlap frontier (support split, curves over cutoff and roughness, empirical roughness)
 
-* **Contribution.** A design-stage diagnostic curve, plus summary numbers (excess floor, breakdown roughness), that bounds the worst-case extrapolation bias and the variance of every linear estimator of a given estimand. It covers binary, multi-valued, continuous and policy estimands.
-* **Theory to prove.**
+* **Contribution.** A reporting framework for any conditioning estimator (§4.6), with two layers:
+  - *Outcome-free design stage:* the overlap frontier, the extrapolation floor and unit-level distances map where extrapolation happens.
+  - *Analysis stage:* support-split estimates presented as curves over the cutoff (exclude) and over the cutoff × roughness (keep and bound). Roughness is estimated from comparison-arm outcomes, with a data-refuted lower limit and a breakdown value.
+
+  It covers binary, multi-valued, continuous and policy estimands.
+* **Theory to prove (hybrid layer).**
+  * Coverage of the keep-and-bound intervals for the full estimand. This needs Lipschitz behaviour on \(U(c)\), and on \(S(c)\) either correct specification or an average-case (GP-posterior) allowance for model bias.
+  * Inference that holds *simultaneously* over the grid of \((c,L)\), so the curves can be read without multiple-testing worries.
+  * The empirical roughness: consistency and a lower confidence bound for the supremum or a high quantile of the gradient norm (smoothing attenuation against noise inflation), and the refutation threshold as a one-sided test.
+  * Guidance on cutoff scales: multiples of typical spacing versus conformal p-values, and their equivalence.
+* **Theory to prove (frontier layer).**
   * Formal statement of the bound for linear estimators, including signed weights and augmented (doubly robust) estimators, which are linear in a residual.
   * Population frontier: existence, monotonicity, the floor characterisation (\(B_{\min}=0\iff\) support containment), and continuity in \(P^\*\).
   * Consistency and rates of the empirical frontier. Asymptotics of the floor, which are nonstandard because NN-distance functionals scale as \(n^{-1/p}\). A null-calibrated excess-floor statistic with valid tests (permutation or conformal) and bootstrap or subsampling inference for the curve.
@@ -395,11 +462,19 @@ Each direction lists what it would need to become a contribution, and the main r
   * A continuous-treatment application (for example a dose-type exposure).
 * **Software.** A small R package (the main audience) with a Python twin. Core is the capacitated OT solver; R `transport` or Python POT; entropic solver for large \(n\). Plots: frontier, dose profile, coverage curve.
 * **Main risks.**
-  1. *Novelty against Armstrong & Kolesár (2021), Kallus (2020), and Ma & Namkoong (2025).* The ingredients exist. The contribution must be the **diagnostic framing**: outcome-free, a curve rather than a point, target- and policy-specific, unified across treatment types, and calibrated. This positioning needs to be written carefully early.
-  2. *Metric dependence:* results change with covariate scaling. Mitigate with the outcome-informed metric and sensitivity plots.
-  3. *Interpretability of "per unit Lipschitz":* mitigate with breakdown roughness and within-overlap calibration.
-  4. *Curse of dimensionality* of raw \(W_1\).
-  5. *Computation* for \(n\) beyond about \(10^4\) (entropic approximations).
+  1. *Novelty against Armstrong & Kolesár (2021), Kallus (2020), and especially Ma & Namkoong (2025).* Ma & Namkoong also combine overlap-region inference with minimax extrapolation under a smoothness assumption that is checkable in the overlap region. The ingredients exist. The contribution must be:
+     - unit-level support splits with finite-sample (conformal) guarantees;
+     - presentation as curves over *both* cutoff and roughness, rather than a fixed trimming rule;
+     - the outcome-free frontier as a design-stage companion;
+     - continuous-treatment and policy targets;
+     - a political-science and econometrics reporting standard.
+
+     A careful reading of Ma & Namkoong's full text is the first task.
+  2. *Roughness estimation:* the supported region need not predict the unsupported one (the "bends" case of Illustration 6), so the estimate is a benchmark, not a bound. Gradient estimates are sensitive to smoothing choices.
+  3. *Metric dependence:* results change with covariate scaling. Mitigate with the outcome-informed metric and sensitivity plots.
+  4. *Interpretability of "per unit Lipschitz":* mitigate with breakdown roughness and within-overlap calibration.
+  5. *Curse of dimensionality* of raw \(W_1\).
+  6. *Computation* for \(n\) beyond about \(10^4\) (entropic approximations).
 
 ### Rank 2: Target-specific finite-sample support test (conformal) with an "out-of-support share" bound
 
@@ -443,7 +518,7 @@ Each direction lists what it would need to become a contribution, and the main r
 
 ### Suggested sequencing
 
-1. A methods note establishing the frontier, floor, null calibration and duality, with the three-scenario and band-design simulations.
+1. A methods paper on the hybrid sensitivity analysis: support split, curves over cutoff and roughness, empirical roughness and breakdown. Use the frontier and floor as its design-stage companion, with the three-scenario, gap and band-design simulations and LaLonde.
 2. Inference for the excess floor plus the conformal support test (Ranks 1 and 2 together).
 3. A continuous-treatment and policy paper (Rank 3).
 4. The software paper.
@@ -461,6 +536,8 @@ Rank 4 slots into step 1 as a section.
 | `scripts/03_continuous_treatment.py` | `outputs/03_continuous.png`, `03_continuous.tsv` | Band design: strict positivity fails at every dose. GPS-IPW silently changes the estimand, while imputation extrapolates. Dose profiles of non-overlap share and Lipschitz floor. Shift-policy out-of-support share \(=\delta/2\). |
 | `scripts/04_holes_and_shape.py` | `outputs/04_holes.png`, `04_holes.txt` | A hole: hull and depth fail (depth inverted), while NN coverage, conformal BH and persistent homology detect it. |
 | `scripts/05_overlap_frontier.py` | `outputs/05_frontier.png`, `05_frontier.tsv` | The proposed frontier and floor separate "needs re-weighting" from "needs extrapolation". Estimators are placed on the frontier; bounds are verified. |
+| `scripts/06_hybrid_sensitivity.py` | `outputs/06_hybrid.png`, `06_hybrid.tsv` | The hybrid analysis: support split at many cutoffs; exclude and keep-and-bound curves over cutoff and roughness; empirical roughness from control outcomes; a surface that bends where there are no data shows why curves, not single numbers, are needed. |
+| `scripts/07_average_vs_worst_case.py` | `outputs/07_average_vs_worst_case.txt` | GP-prior (average-case) RMS bias equals the kernel MMD; it is much smaller than the Lipschitz worst case when only re-weighting is needed, and discriminates gap or hole from shift better. |
 | `scripts/common.py` | (none) | Helpers: ESS, implied OLS weights, hull LP, random Tukey depth, capacitated-OT frontier, KR norm for signed weights. |
 
 Reproduce with `pip install -r requirements.txt`, then `cd scripts && python 0X_*.py`. All scripts use fixed seeds. Illustration 2 takes several minutes (convex-hull LPs at \(p=100\)); the others take seconds.

@@ -1,0 +1,33 @@
+# Illustration 6: hybrid support split + sensitivity curves + empirical roughness
+true full ATT = 0.503;  typical control spacing s0 = 0.087
+GP on controls: amplitude 9.01, length-scales [12.93, 24.7], noise sd 0.52
+empirical roughness = gradient norm of GP mean over control support (true value 1.12 in the supported region)
+  median 1.13 [90% boot 1.07, 1.18]
+  90th pct 1.15 [1.12, 1.30]
+  max 1.16 [1.13, 1.39]
+  smallest L consistent with the fitted control values (data refute any smaller L): 1.16
+  true max gradient in the unsupported gap: continues 1.12, bends 4.03
+
+surface	cutoff_mult	cutoff	share_excluded	ATT_supported	SE	true_ATT_supported	full_ATT_95lo@Lhat	full_ATT_95hi@Lhat	full_ATT_95lo@2xLhat	full_ATT_95hi@2xLhat	breakdown_L
+continues	1.0	0.087	0.705	0.283	0.065	0.375	0.330	1.104	-0.038	1.467	2.38
+continues	1.5	0.131	0.570	0.335	0.053	0.381	0.337	1.096	-0.009	1.436	2.38
+continues	2.0	0.174	0.470	0.354	0.048	0.393	0.340	1.082	0.015	1.400	2.50
+continues	3.0	0.262	0.370	0.383	0.044	0.415	0.344	1.041	0.047	1.330	2.62
+continues	4.0	0.349	0.340	0.379	0.043	0.421	0.347	1.024	0.061	1.302	2.62
+continues	5.0	0.436	0.290	0.385	0.042	0.432	0.350	0.985	0.088	1.241	2.88
+continues	6.0	0.523	0.255	0.378	0.042	0.440	0.353	0.951	0.113	1.187	3.00
+continues	8.0	0.698	0.170	0.404	0.039	0.460	0.364	0.844	0.187	1.020	3.62
+continues	10.0	0.872	0.085	0.433	0.038	0.482	0.376	0.705	0.279	0.801	5.75
+continues	12.0	1.047	0.000	0.464	0.037	0.503	0.392	0.536	0.392	0.536	inf
+continues	16.0	1.396	0.000	0.464	0.037	0.503	0.392	0.536	0.392	0.536	inf
+bends	1.0	0.087	0.705	0.283	0.065	0.375	0.573	1.347	0.205	1.710	3.12
+bends	1.5	0.131	0.570	0.335	0.053	0.381	0.580	1.339	0.234	1.679	3.25
+bends	2.0	0.174	0.470	0.354	0.048	0.393	0.583	1.325	0.258	1.643	3.38
+bends	3.0	0.262	0.370	0.389	0.045	0.415	0.587	1.284	0.289	1.574	3.62
+bends	4.0	0.349	0.340	0.388	0.043	0.421	0.590	1.267	0.303	1.546	3.62
+bends	5.0	0.436	0.290	0.405	0.043	0.432	0.592	1.229	0.330	1.485	3.88
+bends	6.0	0.523	0.255	0.409	0.042	0.440	0.595	1.195	0.355	1.431	4.12
+bends	8.0	0.698	0.170	0.479	0.043	0.460	0.600	1.094	0.424	1.270	5.25
+bends	10.0	0.872	0.085	0.582	0.048	0.482	0.601	0.966	0.505	1.062	inf
+bends	12.0	1.047	0.000	0.707	0.053	0.503	0.603	0.811	0.603	0.811	inf
+bends	16.0	1.396	0.000	0.707	0.053	0.503	0.603	0.811	0.603	0.811	inf
