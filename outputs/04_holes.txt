@@ -1,0 +1,8 @@
+# Illustration 4: hole in the support (n0=400 controls on annulus, 100 treated)
+                                    in hole   on annulus
+share inside control convex hull    1.00      0.92
+mean random Tukey depth             0.380     0.097
+mean NN distance to controls        0.543     0.074
+share flagged by conformal BH q=0.1 1.00      0.02
+Persistent homology of controls: top-3 H1 persistences = [1.595, 0.284, 0.277]
+(one long-lived loop = the hole; the rest are sampling noise)
