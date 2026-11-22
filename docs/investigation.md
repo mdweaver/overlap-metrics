@@ -12,21 +12,37 @@
 
 1. **One lens for both strategies.** Regression imputation, IPW, matching and balancing weights are all, for a fixed design, *linear in the comparison units' outcomes*: \(\hat\tau = \bar Y_{\text{target}} - \sum_j w_j Y_j\). The conditional error then splits exactly into a bias term \(\int m_0\, d(P^\* - Q_w)\) and a noise term \(\sum_j w_j\varepsilon_j\). Overlap is the question of whether *some* weights make both small. Regression fails by putting negative weight on some units (extrapolating a line). IPW fails by putting enormous weight on a few units (extrapolating their outcomes). See Illustration 1.
 2. **Bias and variance have natural, computable bounds.** If \(m_0\) is \(L\)-Lipschitz, the worst-case bias of any such estimator is \(L\cdot W_1(P^\*, Q_w)\), by Kantorovich–Rubinstein duality. For signed weights the bound is the Kantorovich–Rubinstein norm. The noise variance is \(\sigma^2/\mathrm{ESS}(w)\). For the ideal IPW weights, \(\mathrm{ESS}/n_0 \to 1/(1+\chi^2(P^\*\Vert P_0))\).
-3. **Proposed metric: the *overlap frontier*.** Define \(B(k) = \min\{W_1(P^\*,Q_w): w\ge 0,\ \sum w=1,\ \mathrm{ESS}(w)\ge k\}\). This curve is target-specific (change \(P^\*\) to change the estimand), graded, and measured in interpretable units (bias per unit of outcome roughness, against effective sample size). It needs no outcome data, and it bounds every linear estimator at once. Its left end, the *extrapolation floor*, is zero in the population if and only if the target lies inside the comparison support. A solved transport problem computes it exactly. It extends directly to multi-valued and continuous treatments and to policy (shift) estimands. See Illustrations 3(d) and 5.
+3. **Proposed metric: the *overlap frontier*.** Define \(B(k) = \min\{W_1(P^\*,Q_w): w\ge 0,\ \sum w=1,\ \mathrm{ESS}(w)\ge k\}\). This curve is target-specific (change \(P^\*\) to change the estimand), graded, and measured in interpretable units (bias per unit of outcome roughness, against effective sample size). It needs no outcome data, and it bounds every linear estimator at once. Its left end, the *extrapolation floor*, is zero in the population if and only if the target lies inside the comparison support. A solved transport problem computes it exactly. It extends directly to multi-valued and continuous treatments and to policy (shift) estimands. See Illustrations 3(d) and 5. *Correction after reading the prior work in full (§2.6):* this curve is Kallus's (2020) balance–variance Pareto frontier for nearest-neighbour matching, and the signed-weight version is Armstrong & Kolesár's (2021) optimal bias–variance frontier. What is new here is only its use as an outcome-free diagnostic, with null calibration and unit-level attribution.
 4. **Geometric diagnostics mislead in both directions.** The convex hull and Tukey depth miss holes in the support. In Illustration 4, treated units sitting inside an empty hole are rated *deeper* than well-supported ones. In high dimension the same diagnostics declare "extrapolation" even when treated and control groups are *identical* (Illustration 2). Local measures (nearest-neighbour or union-of-balls coverage, conformal outlier p-values, persistent homology in low dimension) detect holes correctly. But with raw Euclidean distance they are in turn blind to diffuse high-dimensional shifts that the effective sample size catches (Illustration 2). The choice of metric is therefore the crux.
 5. **Continuous treatments are where the problem is most neglected.** For the dose-response \(\mu(t)=E[Y(t)]\), positivity requires the whole vertical slice \(\{t\}\times\mathrm{supp}(X)\) to lie in the joint support of \((T,X)\). In a design where \(T\) is simply \(X\) plus bounded noise, strict positivity fails at *every* dose, even though \(T\) ranges over the whole real line. GPS-weighting then does not blow up: it silently estimates the effect for a different population (Illustration 3). Shift-type estimands need only local support, and their overlap can be graded directly.
 
-**Recommended direction (ranked first in §5; revised after discussion).** A **hybrid sensitivity analysis** (§4.6).
+**Recommended direction (ranked first in §5; revised again after reading the three closest papers in full, §2.6).**
 
-1. Split the target units into *supported* and *unsupported* sets by their distance to the comparison data, at a range of cutoffs.
-2. Present results as **curves**:
-   - the effect on the supported subpopulation (unsupported units excluded), against the cutoff;
-   - the full-population effect, with worst-case Lipschitz bounds applied *only* to the unsupported units, against the cutoff and the assumed outcome roughness \(L\).
-3. Supply an **empirical estimate of the roughness** from comparison-arm outcomes only.
+The hybrid sensitivity analysis (§4.6) is still the right structure:
+- split target units into supported and unsupported sets;
+- report curves over the support cutoff and the assumed outcome roughness;
+- benchmark the roughness against what the comparison data show.
 
-The data can rule out any roughness below that estimate. They cannot bound it from above in the unsupported region, so results are shown at multiples of it, with a breakdown value.
+But most of its parts already exist:
+- **Armstrong & Kolesár (2021)** give worst-case-bias confidence intervals for *any* estimator that is linear in outcomes, valid with or without overlap. They recommend reporting results over a range of smoothness constants, and they prove the constant cannot be chosen from the data to tighten intervals.
+- **Kallus (2020)** gives:
+  - the balance–variance frontier, of which the "overlap frontier" is a special case;
+  - the Gaussian-process (average-case) reading of balancing;
+  - a bias-bound interval using a roughness magnitude estimated from *control outcomes* by marginal likelihood.
+- **Ma, Huang & Namkoong (2026, v2)** give exactly the overlap/non-overlap split:
+  - asymptotic inference (AIPW) inside the overlap region;
+  - Armstrong–Kolesár minimax bounds outside it;
+  - a sensitivity curve over the Lipschitz constant, calibrated by percentiles of fitted outcome slopes in the overlap region.
 
-The overlap frontier (§4.2) is the outcome-free design-stage map that comes before this analysis. A conformal support test (§4.5) provides a finite-sample version of the supported/unsupported split.
+A contribution must therefore come from what none of them does:
+1. **Curves over the support cutoff as well as the roughness.** The split should come from a model-free distance or conformal rule, instead of one propensity threshold chosen to shorten the interval.
+2. **A graded hybrid.** Bound *interpolation* bias inside the support (average case, kernel or GP) as well as *extrapolation* bias outside it (worst case). Ma–Huang–Namkoong set the former to zero, yet Armstrong & Kolesár show it dominates whenever more than two covariates are continuous.
+3. **A formal account of benchmarking.** State what calibrating the roughness against the supported region does, and does not, guarantee, given Armstrong–Kolesár's impossibility result.
+4. **Metrics for many covariates.** Use interpretable per-covariate bounds (Armstrong–Kolesár's NSW practice) or learned relevance weights (Kallus's ARD).
+5. **Continuous treatments and shift policies**, which none of the three covers.
+6. **Software and reporting guidance** for applied political science and economics.
+
+The overlap frontier (§4.2) remains a useful outcome-free design-stage map. A conformal support test (§4.5) provides a finite-sample version of the split. The plain-language answers to "is the model assumed linear?" and "does this handle interpolation bias too?" are in §2.7.
 
 ---
 
@@ -243,10 +259,10 @@ Their **infeasibility or dispersion is itself an overlap diagnostic.** If balanc
 * **High dimensions.** D'Amour, Ding, Feller, Lei & Sekhon (2021) show that strict overlap bounds the likelihood ratio, and hence divergences, between the treated and control covariate laws. Mean differences across covariates must therefore be small on average, and adding covariates makes strict overlap *more* restrictive. "Condition on everything" is not a free lunch.
 * **Partial identification and sensitivity without overlap.**
   * Susmann, McClean & Díaz (2025, preprint) combine a trimmed effect in the overlap region with worst-case (Manski-type) bounds in the non-overlap region.
-  * Ma & Namkoong (2025, preprint) bound trimming bias using a smoothness assumption that they make checkable from well-overlapped regions.
+  * Ma, Huang & Namkoong (2026, preprint v2) bound the bias of trimming. Inside the overlap region they use AIPW; outside it they use Armstrong–Kolesár minimax Lipschitz intervals. They calibrate the Lipschitz constant by percentiles of fitted slopes in the overlap region (details in §2.6).
   * Nethery, Mealli & Dominici (2019) use BART in the overlap region and spline extrapolation outside it.
   * Hill & Su (2013) flag units without "common causal support" from BART posterior uncertainty.
-  * Kallus (2020) obtains partial-identification intervals under limited overlap within kernel optimal matching.
+  * Kallus (2020) obtains partial-identification intervals under limited overlap within kernel optimal matching: \(\hat\tau\pm\hat\gamma\cdot\)imbalance, where \(\hat\gamma\) is an a priori or marginal-likelihood estimate of the outcome function's RKHS norm.
 
 **Assessment.** The formal literature tells us *what goes wrong* (rates, variance, coverage) and how to do *robust inference* under an assumed smoothness class. It does not provide a *design-stage, outcome-free, target-specific measure* that tells a researcher how much of their estimate is extrapolation. The Lipschitz-minimax work comes closest, but it is framed as an estimator and CI, not as a diagnostic curve.
 
@@ -267,6 +283,101 @@ Their **infeasibility or dispersion is itself an overlap diagnostic.** If balanc
 * **Regression as weighting.** The implied weights of OLS (Chattopadhyay & Zubizarreta 2023; R package `lmw`) put the imputation estimator on the same footing. Negative weights mean the estimator extrapolates beyond the comparison data. Kang & Schafer (2007) illustrate how fragile IPW and DR estimators become when some estimated propensities are small.
 
 These links are what make a *unified* overlap metric possible (§4).
+
+### 2.6 The three closest papers, read in full
+
+Detailed notes, with a comparison table, are in [`reading_notes_close_papers.md`](reading_notes_close_papers.md). The points that change this plan:
+
+1. **Armstrong & Kolesár (2021).** They condition on the design and assume the outcome surface lies in a convex, symmetric smoothness class, mainly Lipschitz with a researcher-chosen constant \(C\) and norm.
+   - **Worst-case bias of any given estimator.** For any estimator linear in outcomes they compute its worst-case bias as a linear program, and form intervals \(\hat L\pm \mathrm{cv}_\alpha(\text{bias}/\text{sd})\cdot\text{sd}\).
+   - **Optimal weights.** Varying a single parameter traces the optimal bias–variance frontier.
+   - **Validity without overlap.** The feasible intervals are asymptotically valid *with no overlap condition at all*, including when the effect is only set-identified.
+   - **Smoothness cannot be learned.** \(C\) cannot be chosen from data to shorten intervals (adaptation bounds), so they report results over a range of \(C\).
+   - **Interpolation bias matters even with perfect overlap.** Under Lipschitz, \(\sqrt n\)-inference is impossible once more than two covariates are continuous: bias between nearby points dominates.
+   - **Interpretable norm.** In the NSW application the norm is a weighted \(\ell_1\) with *interpretable per-covariate bounds* on partial effects, e.g. "the race gap is at most $2,500".
+2. **Kallus (2020).** Every weighting or matching estimator minimises a worst-case bias over some class of outcome functions; that minimised quantity is its "imbalance".
+   - **Methods as classes.** Nearest-neighbour matching corresponds to the Lipschitz class, mean balancing and OLS to the linear class, CEM to piecewise-constant functions, and kernel optimal matching to a smooth RKHS ball.
+   - **Simplex weights forbid extrapolation.** Signed weights allow it; regression is mean balancing with signed weights.
+   - **The frontier is his.** Penalising variance traces the balance–variance Pareto frontier. Our "overlap frontier" is his frontier for nearest-neighbour matching.
+   - **Average-case reading.** With a Gaussian-process prior, kernel matching minimises the *expected* squared error exactly.
+   - **Hyperparameters from control outcomes.** He picks smoothness hyperparameters (including per-covariate relevance) by marginal likelihood on control outcomes.
+   - **Bias-bound interval.** Under limited overlap he reports \(\hat\tau\pm\hat\gamma\cdot\)imbalance, explicitly assuming that the complexity of \(m_0\) on the treated covariates can be judged from the controls.
+3. **Ma, Huang & Namkoong (2026, v2).** This is the hybrid:
+   - split units at a propensity threshold \(\epsilon\);
+   - use AIPW for the overlap part;
+   - use Armstrong–Kolesár minimax intervals for the non-overlap part;
+   - combine the two by a union bound;
+   - plot the non-overlap interval against \(L\), with \(L\) expressed as a percentile of pairwise slopes of the fitted outcome model in the overlap region.
+
+   **Gaps:**
+   - \(\epsilon\) is fixed, chosen to minimise the trimmed-AIPW interval, so there is no curve over cutoffs;
+   - interpolation bias in the overlap region is treated as zero;
+   - there is no guarantee for the data-calibrated \(L\);
+   - the metric is \(\ell_2\) on raw covariates (even with 60 of them);
+   - treatment is binary only.
+
+**What follows for this project.**
+- The hybrid with roughness curves is the natural structure; that is reassuring, and also crowded.
+- The empirical-roughness idea is already in two forms in the literature: Kallus's marginal likelihood and Ma–Huang–Namkoong's slope percentiles.
+- Armstrong & Kolesár's impossibility result means any such calibration is a benchmark for reading sensitivity curves, not a route to coverage.
+- The open ground is listed in §0 and Rank 1.
+
+### 2.7 Is the true model assumed linear? Interpolation versus extrapolation; which estimators can be bounded
+
+**Linear in outcomes is not linear in covariates.** All three papers restrict the *estimator* to be linear (affine) in the outcomes, \(\hat\mu_0=\sum_j w_jY_j\). The weights can depend on the covariates and treatments in any nonlinear way. None assumes the *outcome surface* is linear in observables:
+
+| Paper | Assumption on the outcome surface | Where linearity enters |
+|---|---|---|
+| Armstrong–Kolesár | Lipschitz (or other convex, symmetric smoothness class) | Pure Lipschitz *excludes* unbounded linear trends, so they offer "unrestricted linear part + Lipschitz residual". Its constant measures departure from linearity, and the optimal estimator becomes regression-adjusted matching. |
+| Kallus | Bounded seminorm: Lipschitz, RKHS (e.g. Gaussian or Matérn), linear, piecewise constant | The linear class gives mean balancing or OLS. Semi-kernel matching leaves the linear part unpenalised and penalises curvature. |
+| Ma–Huang–Namkoong | Lipschitz in the non-overlap region; a consistent flexible model (random-forest AIPW) in the overlap region | Not assumed. |
+
+*Plain language:* "linear in outcomes" means the estimate is a weighted average of observed outcomes with weights fixed before looking at the outcomes. Matching, IPW, balancing weights and regression all qualify. Regression is the only one that *also* assumes the outcome is linear in the covariates, and it pays for that with negative weights that extend the fitted line beyond the data.
+
+**Restricting to linear estimators costs little.** Armstrong & Kolesár (via Donoho 1994) show that the best linear estimator is at least 89.4% as efficient, in worst-case RMSE, as the best estimator of any kind. Their fixed-length intervals are at least 71.7% efficient (in practice over 97%) relative to intervals that adapt to smooth outcome surfaces. So the bias these methods quantify is **not caused by** linearity in outcomes. It is caused by the fact that target units do not sit exactly on comparison units.
+
+**Does the smoothness approach handle interpolation bias as well as extrapolation bias? Yes, in one quantity.**
+- The worst-case bias \(\sup_{m_0\in\mathcal F}\big|\sum_jw_jm_0(X_j)-E_{P^\*}m_0\big|\) charges for every gap between a target point and the comparison points used for it: small gaps inside the support (*interpolation*) and large gaps outside it (*extrapolation*).
+- With continuous covariates, interpolation bias never vanishes in finite samples. Under Lipschitz it shrinks only like \(n^{-1/p}\), which is why Armstrong & Kolesár find it dominates the variance when \(p>2\), even with perfect overlap.
+- Extrapolation bias does not shrink with \(n\) at all.
+- Ma–Huang–Namkoong apply the worst case only outside their split and assume interpolation bias is negligible inside it. Armstrong–Kolesár and Kallus bound both together.
+- The transport plan behind the Kantorovich–Rubinstein bound attributes the bound to individual target units. The bound therefore splits into an interpolation part (supported units), an extrapolation part (unsupported units) and, for signed weights, a **leverage** part carried by negative weights.
+
+**Which estimators can be bounded this way?** Any estimator whose weights are fixed by the covariates and treatments before the outcomes are used. This holds conditionally on the design, and on any separately fitted nuisance model:
+- **Weighting:** IPW with a propensity score estimated from \((X,T)\) only; overlap weights; CBPS; entropy balancing; stable balancing weights; kernel balancing; independence weights; **energy balancing weights**.
+- **Matching:** with or without replacement, calipers, CEM, optimal matching.
+- **Imputation by linear smoothers:** OLS or ridge on any fixed basis (polynomials, splines), kernel ridge, local linear regression, \(k\)-NN, and random forests whose tree structure is fitted on a separate sample.
+- **Augmented or doubly robust estimators:** with the outcome model cross-fitted, they are linear in outcomes and their bias is that of the weights applied to the residual surface \(m_0-\hat m_0\) (Kallus, Corollary 2).
+- **Not directly bounded:** estimators that select a model using the same outcomes (lasso selection, trees grown on the same data, BART, neural nets). For these, sample splitting restores the property, or a local linearisation approximates it.
+
+**Energy balancing weights** (Huling & Mak 2024) minimise the energy distance between the treated and the weighted controls over the simplex.
+- Energy distance is a squared MMD for a distance-induced kernel (Sejdinovic et al. 2013), so energy balancing is kernel balancing *without a variance penalty*: in Kallus's notation, GOM(simplex, energy-kernel RKHS, \(\lambda=0\)).
+- Its minimised objective is therefore its own worst-case bias over that kernel's unit ball. Its worst-case Lipschitz bias, interpolation/extrapolation split, ESS and Gaussian-process average-case bias are computed exactly as for any other weights.
+- Adding a variance penalty, as GOM does, would place it on the balance–variance frontier.
+
+**Illustration 8** (`scripts/08_bias_decomposition.py`). Worst-case Lipschitz bias per unit \(L\) in the three scenarios of Illustration 5. "Supported" means within 3× the typical control spacing.
+
+| Scenario | Estimator | ESS | Worst case | Interpolation | Extrapolation | Leverage | GP average-case |
+|---|---|---|---|---|---|---|---|
+| A shift (13% beyond) | OLS linear | 184 | 0.57 | 0.28 | 0.11 | 0.18 | 0.20 |
+| | IPW | 106 | 0.29 | 0.20 | 0.09 | 0 | 0.047 |
+| | 1-NN matching | 62 | 0.18 | 0.10 | 0.08 | 0 | 0.040 |
+| | energy balancing | 108 | 0.25 | 0.17 | 0.09 | 0 | 0.030 |
+| B gap (37% beyond) | OLS linear | 104 | 0.84 | 0.16 | 0.28 | 0.40 | 0.38 |
+| | OLS quadratic | 42 | 0.97 | 0.15 | 0.24 | 0.58 | 0.36 |
+| | IPW | 84 | 0.38 | 0.13 | 0.25 | 0 | 0.17 |
+| | 1-NN matching | 26 | 0.29 | 0.07 | 0.22 | 0 | 0.15 |
+| | energy balancing | 29 | 0.38 | 0.16 | 0.23 | 0 | 0.13 |
+| C hole (50% in hole) | OLS linear | 394 | 0.59 | 0.12 | 0.48 | 0 | 0.34 |
+| | IPW | 222 | 0.46 | 0.10 | 0.36 | 0 | 0.23 |
+| | 1-NN matching | 38 | 0.33 | 0.04 | 0.30 | 0 | 0.20 |
+| | energy balancing | 62 | 0.45 | 0.15 | 0.31 | 0 | 0.15 |
+
+* **Interpolation is not negligible.** With mostly supported targets (A), interpolation accounts for 55–70% of the worst-case bias of every weighting estimator. Ignoring it inside the support, as the Ma–Huang–Namkoong split does, understates risk.
+* **Regression's extra risk is leverage.** In the gap scenario, negative weights carry about half of OLS's bound (0.40 of 0.84), and more for a quadratic fit (0.58 of 0.97).
+- **A worst case is not a forecast.** The quadratic fit's *realised* bias for the outcome surface \(\lVert x\rVert\) is almost zero, because that surface happens to be nearly quadratic.
+* **Negative-weight mass misses holes.** In the hole scenario, OLS has no negative weights at all yet carries the largest extrapolation term (0.48), because a hole lies *inside* the convex hull.
+* **Energy balancing** has the lowest average-case (Gaussian-process) bias in all three scenarios, as expected for a kernel-balancing method. It is not designed to minimise Lipschitz worst-case bias, and here it does not.
 
 ---
 
@@ -344,6 +455,7 @@ Fix a target sample \(\{X^\*_i\}_{i\le n^\*}\) from \(P^\*\) and donor units \(\
 * **Shape.** A frontier that drops quickly to near the floor at large \(k\) means good overlap: re-weighting is cheap. A frontier that only reaches its floor at small \(k\) means weak overlap: the answer depends on a few units. A floor well above its null calibration (below) means support failure, and no estimator avoids extrapolation.
 * **Computation.** Replacing \(\mathrm{ESS}\ge k\) by the sufficient cap \(w_j\le 1/k\) makes this a capacitated transport problem. It is solved exactly as balanced optimal transport with a zero-cost dummy target that absorbs spare capacity (`common.frontier`). The exact ESS constraint is a second-order cone program. Entropic regularisation scales to large \(n\).
 * **Signed weights.** Regression imputation is placed on the same axes using the Kantorovich–Rubinstein norm of \(P^\*_n-Q_w\) (`common.kr_bias`).
+* **Prior art.** With a variance *penalty* instead of an ESS constraint, this is Kallus's (2020) balance–variance-efficient nearest-neighbour matching. His Fig. 1b plots exactly this Pareto frontier and shows 1:1 matching lying off it. Allowing signed weights and both arms gives Armstrong & Kolesár's \(\delta\)-path. The frontier as an *object* is therefore known. What is proposed here is its use as an outcome-free diagnostic: the floor, its null calibration, and the attribution of the bound to individual target units (Illustration 8).
 * **Null calibration.** Nearest-neighbour distances shrink with \(n\) even under perfect overlap. The floor should therefore be compared with its value when the target is itself a donor draw (leave-one-out NN distance among donors). Report the *excess floor* \(B_{\min}-B_{\min}^{\text{null}}\), or a conformal p-value for it.
 
 **Illustration 5** (`scripts/05_overlap_frontier.py`). This uses three 2-D scenarios with covariates in control-SD units and the ATT target.
@@ -374,7 +486,7 @@ Everything rests on \(d\). With Euclidean distance on standardised covariates, n
 1. **Outcome-informed metric.** Bias depends only on the directions in which \(m_0\) varies. Estimate a prognostic score or a low-rank representation of \(m_0\) on a held-out split (or on the control arm only, to keep the treated outcomes blind). Then define \(d\) on that representation plus a small isotropic remainder. This is the frontier analogue of "overlap is only needed on deconfounding directions". Risk: it brings outcome modelling into the design stage, so it needs sample splitting and guardrails.
 2. **Kernel (RKHS) version.** Replace \(W_1\) by MMD. The bound becomes \(\lVert m_0\rVert_{\mathcal H}\cdot\mathrm{MMD}_w\), with dimension-free rates but a less intuitive unit. The frontier is then a quadratic program (compare Kallus 2020).
 
-The Lipschitz constant \(L\) is never estimated by the metric itself. The output is *bias per unit \(L\)*. Two ways to make it interpretable: (i) calibrate \(L\) from the outcome variation *within* well-overlapped regions (the strategy Ma & Namkoong 2025 propose); or (ii) report a **breakdown roughness** \(L^\dagger=|\hat\tau|/B\), the outcome roughness at which extrapolation alone could explain the estimate. This is a sensitivity parameter in the same spirit as an E-value or Rosenbaum's \(\Gamma\).
+The Lipschitz constant \(L\) is never estimated by the metric itself. The output is *bias per unit \(L\)*. Two ways to make it interpretable: (i) calibrate \(L\) from the outcome variation *within* well-overlapped regions (the strategy Ma, Huang & Namkoong 2026 adopt, via percentiles of fitted slopes; Kallus 2020 instead estimates an RKHS norm by marginal likelihood); or (ii) report a **breakdown roughness** \(L^\dagger=|\hat\tau|/B\), the outcome roughness at which extrapolation alone could explain the estimate. This is a sensitivity parameter in the same spirit as an E-value or Rosenbaum's \(\Gamma\).
 
 ### 4.5 A complementary formal test
 
@@ -390,11 +502,24 @@ The frontier is graded. A yes/no layer with finite-sample validity can sit on to
 
 Average-case reasoning is therefore both less pessimistic and *more discriminating* in supported regions.
 
+**Relation to Ma, Huang & Namkoong (2026).** Their method (§2.6) is this hybrid with four specific choices:
+- the split is a propensity threshold chosen to minimise the trimmed-AIPW interval;
+- inference inside the split is asymptotic AIPW, with no allowance for interpolation bias;
+- outside the split they use the Armstrong–Kolesár minimax estimator and interval, not plug-in bounds;
+- the Lipschitz constant is reported against percentiles of fitted slopes.
+
+The version below differs in three ways:
+1. It produces curves over the cutoff, with a distance or conformal split.
+2. It proposes an average-case allowance inside the support.
+3. Its "empirical roughness" is the same contextualisation idea, implemented through a Gaussian-process gradient, which is close to Kallus's marginal-likelihood magnitude.
+
+In a real implementation, the unsupported part should use the Armstrong–Kolesár minimax machinery, as Ma, Huang & Namkoong do, rather than the plug-in McShane–Whitney bounds of Illustration 6. The minimax version accounts for noise in the comparison outcomes and uses them optimally.
+
 **Procedure** (for the ATT; it carries over to other targets by changing \(P^\*\) and the donor set).
 
 1. **Support split.** Compute each target unit's distance \(d_i\) to the comparison data: nearest neighbour, or a conformal p-value (§4.5). Express cutoffs \(c\) as multiples of the typical spacing among comparison units, so a cutoff of "3" means "farther than three typical gaps". The supported set is \(S(c)=\{i: d_i\le c\}\); the rest is \(U(c)\).
 2. **Comparison-arm outcome model.** Fit a flexible model (here a Gaussian process with per-covariate length-scales) to *control outcomes only*. Treated outcomes and the effect are never used, which keeps the design-stage spirit.
-3. **Empirical roughness.** Compute the gradient norm of the fitted surface over the comparison support. Report its median, 90th percentile and maximum, with bootstrap intervals. The data refute any \(L\) below the Lipschitz constant of the fitted comparison values, because the Lipschitz identified set is empty there. That gives a *data-based lower limit* for \(L\).
+3. **Empirical roughness.** Compute the gradient norm of the fitted surface over the comparison support. Report its median, 90th percentile and maximum, with bootstrap intervals. The data refute any \(L\) below the Lipschitz constant of the fitted comparison values, because the Lipschitz identified set is empty there. That gives a *data-based lower limit* for \(L\). The upper side is different. Armstrong & Kolesár prove that no data-driven choice of the smoothness constant can tighten intervals without undercoverage for some admissible outcome function. The empirical roughness is therefore a **benchmark for reading the curves, not an estimate that delivers coverage**. All three close papers end up reporting results over a range of the constant for this reason.
 4. **Curves.**
    * *Exclude:* the effect on \(S(c)\) against \(c\), with the share excluded. The estimand changes with \(c\), so the share and the composition of the retained population must be reported alongside.
    * *Keep and bound:* the full-population effect. Units in \(S(c)\) are imputed by the outcome model. Units in \(U(c)\) receive the sharp Lipschitz identified set \(\big[\max_j m_j-L\,d(x,X_j),\ \min_j m_j+L\,d(x,X_j)\big]\), the McShane–Whitney extensions of the fitted comparison values. This is plotted against \(L\) for several cutoffs.
@@ -423,7 +548,7 @@ Average-case reasoning is therefore both less pessimistic and *more discriminati
 
 **Open issues for this procedure.**
 1. Gradient estimates from a smoothed fit are attenuated by smoothing and inflated by noise; the bootstrap covers only part of this.
-2. The per-unit Lipschitz sets ignore estimation error in the fitted comparison values; widening by their posterior sd is a fix.
+2. The per-unit Lipschitz sets ignore estimation error in the fitted comparison values. The principled fix is the Armstrong–Kolesár minimax estimator for the unsupported part, as in Ma, Huang & Namkoong.
 3. The supported-unit imputations carry their own model bias. An average-case (GP-posterior) allowance for it would complete the hybrid.
 4. In high dimension, distances and \(L\) must be defined on outcome-relevant directions; the fitted length-scales supply a natural metric (§4.4).
 5. Continuous and policy versions replace the treated units by \((X_i,t)\) or \((X_i,T_i+\delta)\) targets and use a cost on \((x,t)\).
@@ -434,47 +559,53 @@ Average-case reasoning is therefore both less pessimistic and *more discriminati
 
 Each direction lists what it would need to become a contribution, and the main risks.
 
-### Rank 1: Hybrid sensitivity analysis built on the overlap frontier (support split, curves over cutoff and roughness, empirical roughness)
+### Rank 1: A graded hybrid sensitivity analysis, extending Ma–Huang–Namkoong (curves over cutoff and roughness; average case inside the support, worst case outside)
 
-* **Contribution.** A reporting framework for any conditioning estimator (§4.6), with two layers:
-  - *Outcome-free design stage:* the overlap frontier, the extrapolation floor and unit-level distances map where extrapolation happens.
-  - *Analysis stage:* support-split estimates presented as curves over the cutoff (exclude) and over the cutoff × roughness (keep and bound). Roughness is estimated from comparison-arm outcomes, with a data-refuted lower limit and a breakdown value.
-
-  It covers binary, multi-valued, continuous and policy estimands.
-* **Theory to prove (hybrid layer).**
-  * Coverage of the keep-and-bound intervals for the full estimand. This needs Lipschitz behaviour on \(U(c)\), and on \(S(c)\) either correct specification or an average-case (GP-posterior) allowance for model bias.
-  * Inference that holds *simultaneously* over the grid of \((c,L)\), so the curves can be read without multiple-testing worries.
-  * The empirical roughness: consistency and a lower confidence bound for the supremum or a high quantile of the gradient norm (smoothing attenuation against noise inflation), and the refutation threshold as a one-sided test.
-  * Guidance on cutoff scales: multiples of typical spacing versus conformal p-values, and their equivalence.
-* **Theory to prove (frontier layer).**
-  * Formal statement of the bound for linear estimators, including signed weights and augmented (doubly robust) estimators, which are linear in a residual.
-  * Population frontier: existence, monotonicity, the floor characterisation (\(B_{\min}=0\iff\) support containment), and continuity in \(P^\*\).
-  * Consistency and rates of the empirical frontier. Asymptotics of the floor, which are nonstandard because NN-distance functionals scale as \(n^{-1/p}\). A null-calibrated excess-floor statistic with valid tests (permutation or conformal) and bootstrap or subsampling inference for the curve.
-  * Relationship to the Armstrong–Kolesár optimal estimator. Conjecture to check: the frontier point minimising \(L^2B(k)^2+\sigma^2/k\) is close to their minimax linear weights, though theirs allow signed weights and handle both arms. Relationship to Hirshberg–Wager.
-  * The continuous-treatment version, with a cost weight \(\lambda\) and a kernel bandwidth.
-  * The outcome-informed metric with cross-fitting: show the bound remains valid conditional on the split.
+* **Starting point.**
+  - Ma, Huang & Namkoong (2026): propensity split, AIPW inside, Armstrong–Kolesár minimax outside, curve over \(L\).
+  - Armstrong & Kolesár (2021): worst-case-bias intervals for any linear estimator.
+  - Kallus (2020): the balance–variance frontier, the Gaussian-process reading, and roughness estimated by marginal likelihood.
+* **Contribution (what none of them does).**
+  1. **Curves over the support cutoff as well as the roughness.** The split comes from a model-free rule: distance to comparison units in multiples of their typical spacing, or a conformal p-value with FDR control (Rank 2). It is not one propensity threshold chosen to minimise interval length. The "exclude" curve must report how the retained population changes with the cutoff.
+  2. **A graded hybrid.**
+     - Inside the support: an average-case (kernel or GP-posterior) allowance for *interpolation* bias. Illustration 8 shows it is the larger part of the risk when most targets are supported.
+     - Outside the support: worst-case Armstrong–Kolesár bounds for *extrapolation*.
+     - Combining an average-case and a worst-case term needs an explicit coverage statement (a Bayesian–frequentist hybrid, or worst case over a smaller class inside the support).
+  3. **Benchmarking theory for the roughness.**
+     - Armstrong–Kolesár's adaptation bound rules out data-driven coverage. So formalise what the benchmark does provide:
+       - a one-sided refutation test (\(L\) below the fitted roughness is rejected);
+       - a breakdown value \(L^\dagger\) expressed as a multiple of the benchmark;
+       - conditions (e.g. a stationary Gaussian-process prior) under which the benchmark transfers to the unsupported region.
+     - This is analogous to benchmarking in omitted-variable sensitivity analysis.
+  4. **Metrics that work with many covariates.**
+     - Interpretable per-covariate partial-effect bounds, as in Armstrong–Kolesár's NSW norm. This fits political-science practice well, because each bound is a substantive statement.
+     - Or relevance weights learned from control outcomes (Kallus's ARD), with sample splitting.
+  5. **Continuous treatments and shift policies.** A cost on \((x,t)\), dose-specific cutoffs and shift-size curves. Rank 3 supplies the design side.
+  6. **Reporting standard and software for applied work.** Build on R `ATEHonest` (Armstrong–Kolesár) for the minimax part.
+* **Theory to prove.**
+  - Coverage of the combined (graded) intervals for the full estimand, simultaneously over the \((c,L)\) grid.
+  - Validity of the conformal split, and the effect of using the same units for the split and for estimation (cross-fitting).
+  - The benchmarking results in item 3.
+  - The continuous-treatment version.
+  - For the design-stage frontier (now credited to Kallus): the population floor characterisation, the null-calibrated excess floor, and the unit-level attribution.
 * **Simulations.**
-  * Data-generating processes: shift, gap, hole, heavy tail, high-dimensional sparse \(m_0\), band-type continuous designs, multi-valued.
-  * Coverage of bias bounds; how well the excess floor predicts realised RMSE across estimators; comparison with ESS, trimming rules, hull, O-values and BART-based common support.
+  - Designs: shift, gap, hole, "bends where unsupported", heavy tails, many covariates with sparse outcome surfaces, band-type continuous designs.
+  - Compare coverage and length against:
+    - trimmed AIPW;
+    - Ma–Huang–Namkoong's MP and combined interval;
+    - Armstrong–Kolesár's full minimax interval;
+    - Kallus's KOM++ bias-bound interval;
+    - Susmann–McClean–Díaz bounds.
 * **Empirical.**
-  * LaLonde / NSW with CPS and PSID comparison groups, the canonical limited-overlap benchmark used by Armstrong & Kolesár and in the O-value slides.
-  * A political-science case with extreme counterfactuals, for example the democracy or peacebuilding applications King & Zeng analyse. Data availability is to be checked.
-  * A continuous-treatment application (for example a dose-type exposure).
-* **Software.** A small R package (the main audience) with a Python twin. Core is the capacitated OT solver; R `transport` or Python POT; entropic solver for large \(n\). Plots: frontier, dose profile, coverage curve.
+  - LaLonde/NSW with PSID and CPS comparison groups, using Armstrong–Kolesár's per-covariate norm for direct comparison with their published intervals.
+  - A political-science application with extreme counterfactuals (data availability to check).
+  - A continuous-treatment application.
 * **Main risks.**
-  1. *Novelty against Armstrong & Kolesár (2021), Kallus (2020), and especially Ma & Namkoong (2025).* Ma & Namkoong also combine overlap-region inference with minimax extrapolation under a smoothness assumption that is checkable in the overlap region. The ingredients exist. The contribution must be:
-     - unit-level support splits with finite-sample (conformal) guarantees;
-     - presentation as curves over *both* cutoff and roughness, rather than a fixed trimming rule;
-     - the outcome-free frontier as a design-stage companion;
-     - continuous-treatment and policy targets;
-     - a political-science and econometrics reporting standard.
-
-     A careful reading of Ma & Namkoong's full text is the first task.
-  2. *Roughness estimation:* the supported region need not predict the unsupported one (the "bends" case of Illustration 6), so the estimate is a benchmark, not a bound. Gradient estimates are sensitive to smoothing choices.
-  3. *Metric dependence:* results change with covariate scaling. Mitigate with the outcome-informed metric and sensitivity plots.
-  4. *Interpretability of "per unit Lipschitz":* mitigate with breakdown roughness and within-overlap calibration.
-  5. *Curse of dimensionality* of raw \(W_1\).
-  6. *Computation* for \(n\) beyond about \(10^4\) (entropic approximations).
+  1. **Novelty is now narrow.** The core hybrid exists (Ma–Huang–Namkoong). If items 2, 3 and 5 do not deliver, the result is a practice-oriented synthesis rather than a methods contribution.
+  2. **Coverage of the graded hybrid** needs care, because it mixes worst-case and average-case reasoning.
+  3. **The roughness benchmark is only a benchmark.** The bending surface of Illustration 6 shows the supported region can understate roughness where there are no data.
+  4. **Metric dependence and dimension:** Lipschitz in raw covariates is uninformative with many covariates (Illustration 2).
+  5. **Computation:** minimax programs with \(n\) in the tens of thousands.
 
 ### Rank 2: Target-specific finite-sample support test (conformal) with an "out-of-support share" bound
 
@@ -496,7 +627,7 @@ Each direction lists what it would need to become a contribution, and the main r
 * **Contribution.** For any linear smoother (OLS, ridge, splines, GAMs, kernel ridge, local regression), report negative weight mass, KR bias (worst-case Lipschitz bias), and ESS. Place the estimator on the frontier. Extend to forests (positive weights) and, approximately, to BART or neural nets via local linearisation.
 * **Theory.** Show that negative mass bounds the share of the estimate attributable to extrapolation beyond the donors' convex hull. Characterise when regression's KR bias exceeds the frontier.
 * **Software.** Extends `lmw`-style output.
-* **Risks.** Partly done (Chattopadhyay & Zubizarreta 2023; Aronow & Samii 2016). The value is in the extrapolation interpretation and the frontier comparison. Nonlinear learners are not exactly linear smoothers.
+* **Risks.** Partly done (Chattopadhyay & Zubizarreta 2023; Aronow & Samii 2016). Kallus (2020, Proposition 26) shows OLS with treated-centred interactions *is* mean balancing with signed weights. Armstrong & Kolesár's Theorem 2.1 already computes the worst-case bias of any linear estimator, and Illustration 8 shows its interpolation/extrapolation/leverage attribution. The value is in the extrapolation interpretation and the frontier comparison. Nonlinear learners are not exactly linear smoothers.
 
 ### Rank 5: High-dimensional overlap via outcome-informed (prognostic) metrics
 
@@ -518,7 +649,7 @@ Each direction lists what it would need to become a contribution, and the main r
 
 ### Suggested sequencing
 
-1. A methods paper on the hybrid sensitivity analysis: support split, curves over cutoff and roughness, empirical roughness and breakdown. Use the frontier and floor as its design-stage companion, with the three-scenario, gap and band-design simulations and LaLonde.
+1. A methods paper on the *graded* hybrid sensitivity analysis. It covers the cutoff × roughness curves, average-case bias inside the support, minimax bounds outside it, and benchmarking and breakdown of the roughness. Benchmark it against Ma–Huang–Namkoong's minimax-partial method (MP), Armstrong–Kolesár's full minimax interval and Kallus's KOM++ intervals on LaLonde (with Armstrong–Kolesár's per-covariate norm) and on semi-synthetic designs.
 2. Inference for the excess floor plus the conformal support test (Ranks 1 and 2 together).
 3. A continuous-treatment and policy paper (Rank 3).
 4. The software paper.
@@ -538,6 +669,8 @@ Rank 4 slots into step 1 as a section.
 | `scripts/05_overlap_frontier.py` | `outputs/05_frontier.png`, `05_frontier.tsv` | The proposed frontier and floor separate "needs re-weighting" from "needs extrapolation". Estimators are placed on the frontier; bounds are verified. |
 | `scripts/06_hybrid_sensitivity.py` | `outputs/06_hybrid.png`, `06_hybrid.tsv` | The hybrid analysis: support split at many cutoffs; exclude and keep-and-bound curves over cutoff and roughness; empirical roughness from control outcomes; a surface that bends where there are no data shows why curves, not single numbers, are needed. |
 | `scripts/07_average_vs_worst_case.py` | `outputs/07_average_vs_worst_case.txt` | GP-prior (average-case) RMS bias equals the kernel MMD; it is much smaller than the Lipschitz worst case when only re-weighting is needed, and discriminates gap or hole from shift better. |
+| `scripts/08_bias_decomposition.py` | `outputs/08_bias_decomposition.tsv` | Worst-case Lipschitz bias of imputation and weighting estimators, including energy balancing, attributed to interpolation, extrapolation and negative-weight leverage, with the average-case (GP) bias alongside. |
+| `docs/reading_notes_close_papers.md` | (none) | Detailed notes on Armstrong–Kolesár, Kallus and Ma–Huang–Namkoong, read in full, with a comparison table. |
 | `scripts/common.py` | (none) | Helpers: ESS, implied OLS weights, hull LP, random Tukey depth, capacitated-OT frontier, KR norm for signed weights. |
 
 Reproduce with `pip install -r requirements.txt`, then `cd scripts && python 0X_*.py`. All scripts use fixed seeds. Illustration 2 takes several minutes (convex-hull LPs at \(p=100\)); the others take seconds.
@@ -548,7 +681,7 @@ Reproduce with `pip install -r requirements.txt`, then `cd scripts && python 0X_
 
 All entries below were checked against a publisher, journal, conference or arXiv record during this investigation, unless marked †. Preprints are labelled.
 
-* Armstrong, T. B., & Kolesár, M. (2021). Finite-sample optimal estimation and inference on average treatment effects under unconfoundedness. *Econometrica*, 89(3), 1141–1177.
+* Armstrong, T. B., & Kolesár, M. (2021). Finite-sample optimal estimation and inference on average treatment effects under unconfoundedness. *Econometrica*, 89(3), 1141–1177. Read in full (arXiv:1712.04594v5 with supplemental appendices).
 * Aronow, P. M., & Samii, C. (2016). Does regression produce representative estimates of causal effects? *American Journal of Political Science*, 60(1), 250–267.
 * Balestriero, R., Pesenti, J., & LeCun, Y. (2021). Learning in high dimension always amounts to extrapolation. arXiv:2110.09485 (preprint).
 * Bao, H., & Schomaker, M. (2025). Addressing positivity violations in continuous interventions through data-adaptive strategies (later retitled "Feasible dose-response curves for continuous treatments under positivity violations"). arXiv:2502.14566 (preprint).
@@ -559,6 +692,7 @@ All entries below were checked against a publisher, journal, conference or arXiv
 * Cuesta-Albertos, J. A., & Nieto-Reyes, A. (2008). The random Tukey depth. *Computational Statistics & Data Analysis*, 52(11), 4979–4988.
 * Cuevas, A., & Fraiman, R. (1997). A plug-in approach to support estimation. *Annals of Statistics*, 25(6), 2300–2312.
 * D'Amour, A., Ding, P., Feller, A., Lei, L., & Sekhon, J. (2021). Overlap in observational studies with high-dimensional covariates. *Journal of Econometrics*, 221(2), 644–654.
+* Donoho, D. L. (1994). Statistical estimation and optimal recovery. *Annals of Statistics*, 22(1), 238–270. (Details taken from the reference lists of Armstrong & Kolesár and of Ma, Huang & Namkoong; not separately checked.)
 * Devroye, L., & Wise, G. L. (1980). Detection of abnormal behavior via nonparametric estimation of the support. *SIAM Journal on Applied Mathematics*, 38(3), 480–488.
 * Díaz, I., & van der Laan, M. J. (2012). Population intervention causal effects based on stochastic interventions. *Biometrics*, 68(2), 541–549.
 * Edelsbrunner, H., Kirkpatrick, D., & Seidel, R. (1983). On the shape of a set of points in the plane. *IEEE Transactions on Information Theory*, 29(4), 551–559.
@@ -574,11 +708,14 @@ All entries below were checked against a publisher, journal, conference or arXiv
 * Hirano, K., & Imbens, G. W. (2004). The propensity score with continuous treatments. In A. Gelman & X.-L. Meng (Eds.), *Applied Bayesian Modeling and Causal Inference from Incomplete-Data Perspectives* (ch. 7). Wiley.
 * Hirshberg, D. A., & Wager, S. (2021). Augmented minimax linear estimation. *Annals of Statistics*, 49(6), 3206–3227.
 * Ho, D. E., Imai, K., King, G., & Stuart, E. A. (2007). Matching as nonparametric preprocessing for reducing model dependence in parametric causal inference. *Political Analysis*, 15(3), 199–236.
+* Huling, J. D., & Mak, S. (2024). Energy balancing of covariate distributions. *Journal of Causal Inference*, 12(1). doi:10.1515/jci-2022-0029.
 * Huling, J. D., Greifer, N., & Chen, G. (2024). Independence weights for causal inference with continuous treatments. *Journal of the American Statistical Association*, 119(546), 1657–1670.
 * Imai, K., & Ratkovic, M. (2014). Covariate balancing propensity score. *Journal of the Royal Statistical Society B*, 76(1), 243–263.
 * Imbens, G. W. (2000). The role of the propensity score in estimating dose-response functions. *Biometrika*, 87(3), 706–710.
 * Imbens, G. W., & Rubin, D. B. (2015). *Causal Inference for Statistics, Social, and Biomedical Sciences*. Cambridge University Press. (Ch. 14, "Assessing overlap in covariate distributions".)
-* Kallus, N. (2020). Generalized optimal matching methods for causal inference. *Journal of Machine Learning Research*, 21(62), 1–54.
+* Kallus, N. (2020). Generalized optimal matching methods for causal inference. *Journal of Machine Learning Research*, 21(62), 1–54. Read in full.
+* Kallus, N., & Santacatterina, M. (2019). Kernel optimal orthogonality weighting: A balancing approach to estimating effects of continuous treatments. arXiv:1910.11972 (preprint).
+* Khan, S., Saveski, M., & Ugander, J. (2024). Off-policy evaluation beyond overlap: Sharp partial identification under smoothness. *Proceedings of ICML*, PMLR 235, 23734–23757.
 * Kang, J. D. Y., & Schafer, J. L. (2007). Demystifying double robustness. *Statistical Science*, 22(4), 523–539.
 * Kennedy, E. H. (2019). Nonparametric causal effects based on incremental propensity score interventions. *Journal of the American Statistical Association*, 114(526), 645–656.
 * Kennedy, E. H., Ma, Z., McHugh, M. D., & Small, D. S. (2017). Non-parametric methods for doubly robust estimation of continuous treatment effects. *Journal of the Royal Statistical Society B*, 79(4), 1229–1245.
@@ -596,7 +733,7 @@ All entries below were checked against a publisher, journal, conference or arXiv
 * Liu, R. Y., & Singh, K. (1993). A quality index based on data depth and multivariate rank tests. *Journal of the American Statistical Association*, 88(421), 252–260.
 * Lopez, M. J., & Gutman, R. (2017). Estimation of causal effects with multiple treatments: A review and new ideas. *Statistical Science*, 32(3), 432–454.
 * Ma, X., & Wang, J. (2020). Robust inference using inverse probability weighting. *Journal of the American Statistical Association*, 115(532), 1851–1860.
-* Ma, Y., & Namkoong, H. (2025). A sensitivity approach to causal inference under limited overlap. arXiv:2511.22003 (preprint).
+* Ma, Y., Huang, Y., & Namkoong, H. (2026). A sensitivity approach to causal inference under limited overlap. arXiv:2511.22003v2, 18 April 2026 (preprint; v1, November 2025, listed Ma and Namkoong only). Read in full.
 * Ma, Y., Sant'Anna, P. H. C., Sasaki, Y., & Ura, T. (2023). Doubly robust estimators with weak overlap. arXiv:2304.08974 (preprint; later revisions exist).
 * Nethery, R. C., Mealli, F., & Dominici, F. (2019). Estimating population average causal effects in the presence of non-overlap: The effect of natural gas compressor station exposure on cancer mortality. *Annals of Applied Statistics*, 13(2), 1242–1267.
 * Niyogi, P., Smale, S., & Weinberger, S. (2008). Finding the homology of submanifolds with high confidence from random samples. *Discrete & Computational Geometry*, 39, 419–441.
@@ -611,6 +748,7 @@ All entries below were checked against a publisher, journal, conference or arXiv
 * Sasaki, Y., & Ura, T. (2022). Estimation and inference for moments of ratios with robustness against large trimming bias. *Econometric Theory*, 38(1), 66–112.
 * Schölkopf, B., Platt, J. C., Shawe-Taylor, J., Smola, A. J., & Williamson, R. C. (2001). Estimating the support of a high-dimensional distribution. *Neural Computation*, 13(7), 1443–1471.
 * Scott, C. D., & Nowak, R. D. (2006). Learning minimum volume sets. *Journal of Machine Learning Research*, 7, 665–704.
+* Sejdinovic, D., Sriperumbudur, B., Gretton, A., & Fukumizu, K. (2013). Equivalence of distance-based and RKHS-based statistics in hypothesis testing. *Annals of Statistics*, 41(5), 2263–2291.
 * Shalit, U., Johansson, F. D., & Sontag, D. (2017). Estimating individual treatment effect: Generalization bounds and algorithms. *Proceedings of ICML*, PMLR 70, 3076–3085.
 * Susmann, H. P., McClean, A., & Díaz, I. (2025). Non-overlap average treatment effect bounds. arXiv:2509.20206 (preprint).
 * Tibshirani, R. J., Barber, R. F., Candès, E. J., & Ramdas, A. (2019). Conformal prediction under covariate shift. *Advances in Neural Information Processing Systems 32* (NeurIPS 2019).

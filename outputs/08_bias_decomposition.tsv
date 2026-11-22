@@ -1,0 +1,21 @@
+# Illustration 8: worst-case Lipschitz bias split into interpolation / extrapolation / leverage
+# (per unit L, covariate-SD units); GP-RMS = average-case bias under RBF GP prior (amplitude 1, length-scale 1)
+scenario	estimator	ESS	worst_case	interpolation	extrapolation	leverage	GP_RMS	neg_mass	realised_bias_m0=|x|
+## A shift: share of treated beyond 3x spacing = 0.13
+A shift	OLS imputation (linear)	183.5	0.571	0.282	0.113	0.175	0.203	0.104	0.348
+A shift	OLS imputation (quadratic)	128.7	0.414	0.300	0.086	0.028	0.130	0.031	-0.048
+A shift	IPW (logit, quadratic)	105.9	0.288	0.200	0.088	0.000	0.047	-0.000	0.011
+A shift	1-NN matching	61.8	0.177	0.099	0.079	0.000	0.040	-0.000	0.080
+A shift	energy balancing	107.8	0.254	0.168	0.086	0.000	0.030	-0.000	0.030
+## B gap: share of treated beyond 3x spacing = 0.37
+B gap	OLS imputation (linear)	104.0	0.843	0.158	0.281	0.403	0.377	0.309	0.506
+B gap	OLS imputation (quadratic)	42.0	0.969	0.153	0.242	0.575	0.358	0.619	-0.010
+B gap	IPW (logit, quadratic)	84.3	0.382	0.134	0.248	0.000	0.173	-0.000	0.216
+B gap	1-NN matching	25.9	0.292	0.070	0.222	0.000	0.149	-0.000	0.170
+B gap	energy balancing	28.9	0.381	0.156	0.226	0.000	0.128	-0.000	0.083
+## C hole: share of treated beyond 3x spacing = 0.50
+C hole	OLS imputation (linear)	394.0	0.591	0.116	0.475	0.000	0.342	-0.000	-0.563
+C hole	OLS imputation (quadratic)	142.9	0.549	0.119	0.342	0.088	0.195	0.193	-0.179
+C hole	IPW (logit, quadratic)	222.0	0.461	0.104	0.357	0.000	0.231	-0.000	-0.325
+C hole	1-NN matching	37.8	0.334	0.035	0.299	0.000	0.197	-0.000	-0.296
+C hole	energy balancing	62.3	0.450	0.146	0.305	0.000	0.151	-0.000	-0.178

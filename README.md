@@ -10,6 +10,8 @@ risk when conditioning for causal inference by imputation or re-weighting.
   critique of existing diagnostics, with checked references; directions from
   other areas of mathematics; the proposed *overlap frontier* and *extrapolation
   floor*; and a ranked research plan.
+- `docs/reading_notes_close_papers.md`: detailed notes on the three closest papers
+  (Armstrong & Kolesár 2021; Kallus 2020; Ma, Huang & Namkoong 2026), read in full.
 - `scripts/`: small numerical illustrations (run from inside `scripts/`).
 - `outputs/`: figures and tables produced by the scripts.
 
